@@ -1,22 +1,30 @@
 "use client";
 import BusinessIcon from "@mui/icons-material/Business";
 import { Box, Button, Container, Typography } from "@mui/material";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function Login() {
+const Login = () => {
   const router = useRouter();
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    fetch("/api/auth/status")
-      .then((res) => res.json())
-      .then((data) => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await axios.get("/api/auth/status");
+        const data = response.data;
+
         if (data.user) {
           router.push("/home");
         }
-      })
-      .catch(() => setUser(null));
+      } catch (error) {
+        setUser(null);
+        console.error("Error checking auth status:", error);
+      }
+    };
+
+    checkAuthStatus();
   }, [router]);
 
   return (
@@ -51,4 +59,6 @@ export default function Login() {
       </Box>
     </Container>
   );
-}
+};
+
+export default Login;

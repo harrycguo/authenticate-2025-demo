@@ -5,7 +5,8 @@ import { getSession, sessionMiddleware } from "../session";
 // Handler functions
 const GET = async (req: NextApiRequest, res: NextApiResponse) => {
   const session = await getSession(req, res);
-  res.json(session.passport);
+
+  res.json(session);
 };
 
 // Route handler with error handling

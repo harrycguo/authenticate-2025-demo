@@ -1,22 +1,31 @@
 "use client";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function Page() {
+const Homepage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/auth/status")
-      .then((res) => res.json())
-      .then((data) => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await axios.get("/api/auth/status");
+        const data = response.data;
+
         if (data.user) {
           router.push("/home");
         } else {
           router.push("/login");
         }
-      })
-      .catch(() => router.push("/login"));
+      } catch (error) {
+        router.push("/login");
+      }
+    };
+
+    checkAuthStatus();
   }, [router]);
 
   return null; // or a loading spinner
-}
+};
+
+export default Homepage;
