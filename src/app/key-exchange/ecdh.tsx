@@ -1,4 +1,6 @@
-export const performECDHKeyExchange = async (
+import { storeClientKeyPair } from "@/utils/indexed-db";
+
+const generateECDHKeyPairAndSharedSecret = async (
   serverPublicKeyHex: string
 ): Promise<{
   sharedSecret: string;
@@ -43,6 +45,9 @@ export const performECDHKeyExchange = async (
     true, // Extractable key
     []
   )) as CryptoKey;
+
+  // Store client key pair in IndexedDB with sessionID as the key
+  await storeClientKeyPair(clientKeyPair, serverPublicKey);
 
   // Step 4: Derive the shared secret using the client's private key and the server's public key
   const sharedSecretKey = (await window.crypto.subtle.deriveKey(
@@ -90,4 +95,4 @@ export const performECDHKeyExchange = async (
   };
 };
 
-export default performECDHKeyExchange;
+export { generateECDHKeyPairAndSharedSecret };

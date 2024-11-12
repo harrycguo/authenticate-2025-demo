@@ -15,7 +15,7 @@ interface SecretKeyProviderProps {
 }
 
 export function SecretKeyProvider({ children }: SecretKeyProviderProps) {
-  const [secretKey, setSecretKeyState] = useState<string>("");
+  const [secretKey, setSecretKeyState] = useState<string>("no-key");
 
   const setSecretKey = (newKey: string) => {
     setSecretKeyState(newKey);

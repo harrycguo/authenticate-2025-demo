@@ -4,7 +4,7 @@ import { Box, CircularProgress, Container, Typography } from "@mui/material";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { performECDHKeyExchange } from "./ecdh";
+import { generateECDHKeyPairAndSharedSecret } from "./ecdh";
 
 const KeyExchangePage = () => {
   const router = useRouter();
@@ -29,7 +29,7 @@ const KeyExchangePage = () => {
         const { serverPublicKey } = response.data;
 
         const { sharedSecret, clientPublicKeyBase64 } =
-          await performECDHKeyExchange(serverPublicKey);
+          await generateECDHKeyPairAndSharedSecret(serverPublicKey);
 
         setSecretKey(sharedSecret);
         console.log("Shared secret:", sharedSecret);

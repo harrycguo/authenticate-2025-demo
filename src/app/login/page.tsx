@@ -41,11 +41,10 @@ const Login = () => {
       <Box sx={{ textAlign: "center" }}>
         <BusinessIcon sx={{ fontSize: 60, color: "primary.main", mb: 2 }} />
         <Typography variant="h4" gutterBottom>
-          Welcome to ACME
+          Welcome to Beyond Identity Secure Access
         </Typography>
         <Typography variant="subtitle1" color="text.secondary" sx={{ mb: 3 }}>
-          Join ACME Corporation to access your personalized dashboard, manage
-          your profile, and more.
+          Login to access your enterprise SaaS apps and more.
         </Typography>
         <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
           <Button
