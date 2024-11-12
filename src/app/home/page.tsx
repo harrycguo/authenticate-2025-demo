@@ -1,6 +1,8 @@
 "use client";
 import { useSecretKey } from "@/contexts/secret-key-context";
+import { createClient } from "@/utils/apollo-client";
 import axiosClient from "@/utils/axios-client";
+import { gql } from "@apollo/client";
 import BusinessIcon from "@mui/icons-material/Business";
 import {
   AppBar,
@@ -104,6 +106,52 @@ export default function Home() {
     }
   };
 
+  const makeGraphQLGet = async () => {
+    const HELLO_QUERY = gql`
+      query GetHello {
+        hello {
+          status
+          message
+          requestSignature
+          calculatedSignature
+        }
+      }
+    `;
+
+    try {
+      const client = createClient(secretKey);
+      const response = await client.query({
+        query: HELLO_QUERY,
+      });
+      setHttpResponse(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      console.error("Error with GraphQL GET request:", error);
+    }
+  };
+
+  const makeGraphQLPost = async () => {
+    const HELLO_MUTATION = gql`
+      mutation PostHello {
+        hello {
+          status
+          message
+          requestSignature
+          calculatedSignature
+        }
+      }
+    `;
+
+    try {
+      const client = createClient(secretKey);
+      const response = await client.mutate({
+        mutation: HELLO_MUTATION,
+      });
+      setHttpResponse(JSON.stringify(response.data, null, 2));
+    } catch (error) {
+      console.error("Error with GraphQL POST request:", error);
+    }
+  };
+
   return (
     <>
       <AppBar position="static">
@@ -130,7 +178,7 @@ export default function Home() {
         <Box sx={{ textAlign: "center" }}>
           <BusinessIcon sx={{ fontSize: 60, color: "primary.main", mb: 2 }} />
           <Typography variant="h4" gutterBottom>
-            Welcome back, {user?.name}! Secret key: {secretKey}
+            Welcome back, {user?.name}!
           </Typography>
         </Box>
 
@@ -161,18 +209,6 @@ export default function Home() {
               <Button variant="outlined" onClick={makeAxiosPost}>
                 POST
               </Button>
-              <Button
-                variant="outlined"
-                onClick={() => console.log("GraphQL GET Request")}
-              >
-                GET w/ Signed Token
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => console.log("GraphQL POST Request")}
-              >
-                POST w/ Signed Token
-              </Button>
             </Box>
             <Box
               sx={{
@@ -186,23 +222,11 @@ export default function Home() {
               <Typography variant="h6" color="primary" gutterBottom>
                 GraphQL
               </Typography>
-              <Button variant="outlined" onClick={makeAxiosGet}>
-                GET
+              <Button variant="outlined" onClick={makeGraphQLGet}>
+                QUERY
               </Button>
-              <Button variant="outlined" onClick={makeAxiosPost}>
-                POST
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => console.log("GraphQL GET Request")}
-              >
-                GET w/ Signed Token
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => console.log("GraphQL POST Request")}
-              >
-                POST w/ Signed Token
+              <Button variant="outlined" onClick={makeGraphQLPost}>
+                MUTATION
               </Button>
             </Box>
           </Box>
@@ -217,27 +241,6 @@ export default function Home() {
             gap: 1,
           }}
         >
-          <Box
-            marginBottom={3}
-            sx={{
-              fontFamily: "Roboto, sans-serif",
-              textAlign: "left",
-            }}
-          >
-            Request:
-            <pre
-              style={{
-                fontFamily: "Roboto, sans-serif",
-                textAlign: "left",
-                fontSize: "16px",
-                color: httpResponse?.includes("error")
-                  ? "darkred"
-                  : "darkgreen",
-              }}
-            >
-              {httpRequest}
-            </pre>
-          </Box>
           <Box
             marginBottom={3}
             sx={{

@@ -36,6 +36,7 @@ const POST = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Optionally store the shared secret in the session or use it immediately
     session.secretKey = sharedSecretBase64;
+    delete session.ecdhPrivateKey;
 
     res.status(200).json({ message: "Shared secret computed successfully" });
   } catch (error) {

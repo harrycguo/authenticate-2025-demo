@@ -5,7 +5,6 @@ const generateSharedSecret = async (): Promise<string> => {
   const { clientKeyPair, serverPublicKey } = await retrieveClientKeyPair();
 
   if (!clientKeyPair || !serverPublicKey) {
-    console.error("Client key pair or server public key is missing.");
     return "no-key";
   }
 

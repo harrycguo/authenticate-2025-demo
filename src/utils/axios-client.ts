@@ -1,6 +1,11 @@
 // utils/axiosClient.js
 import axios from "axios";
-import CryptoJS from "crypto-js";
+import {
+  calculateDigest,
+  generateSignature,
+  generateSignatureBase,
+  generateSignatureInput,
+} from "./signature";
 
 const axiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL, // Set your base URL
@@ -26,10 +31,8 @@ axiosInstance.interceptors.request.use((config) => {
 
   // Calculate Digest header if request data is provided
   if (config.data) {
-    const contentHash = CryptoJS.SHA256(JSON.stringify(config.data)).toString(
-      CryptoJS.enc.Base64
-    );
-    config.headers["Digest"] = `SHA-256=${contentHash}`;
+    const digest = calculateDigest(config.data);
+    config.headers["Digest"] = `SHA-256=${digest}`;
   }
 
   console.log("Staging request:");
@@ -59,55 +62,6 @@ axiosInstance.interceptors.request.use((config) => {
   config.headers["Signature"] = signature;
   return config;
 });
-
-const generateSignatureBase = (
-  method: string,
-  authority: string,
-  path: string,
-  contentType: string | undefined,
-  contentLength: number | undefined,
-  digest: string | undefined,
-  now: number
-): string => {
-  if (method === "get") {
-    return (
-      `"@method": ${method.toUpperCase()}\n` +
-      `"@authority": ${authority}\n` +
-      `"@path": ${path}\n` +
-      `"@signature-params": ("@method" "@authority" "@path");created=${now}`
-    );
-  } else if (method === "post") {
-    return (
-      `"@method": ${method.toUpperCase()}\n` +
-      `"@authority": ${authority}\n` +
-      `"@path": ${path}\n` +
-      `"content-type": ${contentType}\n` +
-      `"content-length": ${contentLength}\n` +
-      `"digest": ${digest}\n` +
-      `"@signature-params": ("@method" "@authority" "@path" "content-type" "content-length" "digest");created=${now}`
-    );
-  }
-  return "";
-};
-
-const generateSignatureInput = (method: string, now: number): string => {
-  if (method === "get") {
-    return `sig-1=("@method" "@authority" "@path");created=${now}`;
-  } else if (method === "post") {
-    return `sig-1=("@method" "@authority" "@path" "digest" "content-type" "content-length");created=${now}`;
-  }
-  return "";
-};
-
-const generateSignature = (
-  signatureBase: string,
-  secretKey: string
-): string => {
-  const signature = CryptoJS.HmacSHA256(signatureBase, secretKey).toString(
-    CryptoJS.enc.Base64
-  );
-  return `sig-1=:${signature}:`;
-};
 
 // Wrapper function that takes a secret key and makes a request with it
 // Wrapper function that takes a secret key and makes a request with it
