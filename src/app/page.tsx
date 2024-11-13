@@ -17,6 +17,7 @@ const Homepage = () => {
         } else {
           router.push("/login");
         }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         router.push("/login");
       }

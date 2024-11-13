@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 const Login = () => {
   const router = useRouter();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [user, setUser] = useState(null);
 
   useEffect(() => {

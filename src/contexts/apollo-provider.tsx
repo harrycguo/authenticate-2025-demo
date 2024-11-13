@@ -1,13 +1,16 @@
-import { ApolloProvider } from "@apollo/client";
 import { useSecretKey } from "@/contexts/secret-key-context";
-import { useMemo } from "react";
 import { createClient } from "@/utils/apollo-client";
+import { ApolloProvider } from "@apollo/client";
+import { useMemo } from "react";
 
 const CustomApolloProvider = ({ children }: { children: React.ReactNode }) => {
-  const { secretKey } = useSecretKey();
+  const { secretKey, signedToken } = useSecretKey();
 
   // Memoize the client to only recreate when `secretKey` changes
-  const client = useMemo(() => createClient(secretKey), [secretKey]);
+  const client = useMemo(
+    () => createClient(secretKey, signedToken),
+    [secretKey, signedToken]
+  );
 
   return <ApolloProvider client={client}>{children}</ApolloProvider>;
 };

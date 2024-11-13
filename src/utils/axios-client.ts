@@ -15,11 +15,8 @@ axiosInstance.interceptors.request.use((config) => {
   // Access the secret key with a type assertion
   const secretKey = (config as any).secretKey;
   const signedToken = (config as any).signedToken;
-  // Continue with your custom headers and signature logic
-  // e.g., generating signature with `secretKey`
 
   // Set custom headers
-  config.headers["Authority"] = config.baseURL;
 
   // Calculate Content-Length and Content-Type if request data is provided
   let contentLength;
