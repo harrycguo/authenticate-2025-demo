@@ -32,7 +32,6 @@ const KeyExchangePage = () => {
           await generateECDHKeyPairAndSharedSecret(serverPublicKey);
 
         setSecretKey(sharedSecret);
-        console.log("Shared secret:", sharedSecret);
 
         // Step 5: Send client public key to server
         await axios.post("/api/key-exchange/complete", {

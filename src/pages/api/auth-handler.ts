@@ -9,19 +9,18 @@ import { getSession, sessionMiddleware } from "./session";
 /**
  * Generates a secure, random state string for OAuth requests.
  */
-function generateRandomState() {
+const generateRandomState = () => {
   return crypto.randomBytes(16).toString("hex"); // 32-character hexadecimal string
-}
+};
 
 /**
  * OAuth route middleware
  * Creates an OAuth2 strategy based on a provided org ID.
  * The strategy can then be used to retrieve an access token than can then be attributed to the current session.
  */
-export const authHandler = () =>
+const authHandler = () =>
   nc<NextApiRequest, NextApiResponse>({
     onError: (error, _, res) => {
-      console.log("ERROR", error);
       return res.status(307).end();
     },
   })
@@ -63,3 +62,9 @@ export const authHandler = () =>
         state: session.state, // Pass the generated state to Passport
       })(req, res, next);
     });
+
+export { authHandler };
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.writeHead(307, { Location: "/home" }).end();
+}

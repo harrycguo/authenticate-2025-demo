@@ -14,7 +14,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use((config) => {
   // Access the secret key with a type assertion
   const secretKey = (config as any).secretKey;
-
+  const signedToken = (config as any).signedToken;
   // Continue with your custom headers and signature logic
   // e.g., generating signature with `secretKey`
 
@@ -35,14 +35,6 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers["Digest"] = `SHA-256=${digest}`;
   }
 
-  console.log("Staging request:");
-  console.log("Method:", config.method);
-  console.log("Authority:", config.baseURL);
-  console.log("Path:", config.url);
-  console.log("Digest:", config.headers["Digest"]);
-  console.log("Content Length:", contentLength);
-  console.log("Content Type:", contentType);
-
   const now = Math.floor(Date.now() / 1000);
   const signatureBase = generateSignatureBase(
     config.method as string,
@@ -53,31 +45,38 @@ axiosInstance.interceptors.request.use((config) => {
     config.headers["Digest"] as string,
     now
   );
-  console.log("Signature Base:", signatureBase);
   const signatureInput = generateSignatureInput(config.method as string, now);
-  console.log("Signature Input:", signatureInput);
   const signature = generateSignature(signatureBase, secretKey);
 
   config.headers["Signature-Input"] = signatureInput;
   config.headers["Signature"] = signature;
+  config.headers["Authorization"] = `Bearer ${signedToken}`;
   return config;
 });
 
 // Wrapper function that takes a secret key and makes a request with it
 // Wrapper function that takes a secret key and makes a request with it
-export const axiosClient = (secretKey: string) => {
+export const axiosClient = (secretKey: string, signedToken: string) => {
   return {
     get: (url: string, config = {}) =>
-      axiosInstance.get(url, { ...config, secretKey } as any),
+      axiosInstance.get(url, { ...config, secretKey, signedToken } as any),
 
     post: (url: string, data: any, config = {}) =>
-      axiosInstance.post(url, data, { ...config, secretKey } as any),
+      axiosInstance.post(url, data, {
+        ...config,
+        secretKey,
+        signedToken,
+      } as any),
 
     put: (url: string, data: any, config = {}) =>
-      axiosInstance.put(url, data, { ...config, secretKey } as any),
+      axiosInstance.put(url, data, {
+        ...config,
+        secretKey,
+        signedToken,
+      } as any),
 
     delete: (url: string, config = {}) =>
-      axiosInstance.delete(url, { ...config, secretKey } as any),
+      axiosInstance.delete(url, { ...config, secretKey, signedToken } as any),
   };
 };
 

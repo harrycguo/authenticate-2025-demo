@@ -32,8 +32,6 @@ const POST = async (req: NextApiRequest, res: NextApiResponse) => {
     const sharedSecretBuffer = Buffer.from(sharedSecretHex, "hex");
     const sharedSecretBase64 = sharedSecretBuffer.toString("base64");
 
-    console.log("Shared secret:", sharedSecretBase64);
-
     // Optionally store the shared secret in the session or use it immediately
     session.secretKey = sharedSecretBase64;
     delete session.ecdhPrivateKey;

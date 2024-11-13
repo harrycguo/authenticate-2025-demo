@@ -3,6 +3,7 @@ import {
   generateSignatureBase,
   parseCreatedFromSignatureInput,
 } from "@/utils/signature";
+import { verifyToken } from "@/utils/token";
 import { ApolloServer } from "@apollo/server";
 import { startServerAndCreateNextHandler } from "@as-integrations/next";
 import { GraphQLError } from "graphql";
@@ -36,7 +37,7 @@ const resolvers = {
     hello: (parent: any, args: any, context: any) => {
       return {
         status: "success",
-        message: "Hello for query!",
+        message: "GraphQL - Hello for query!",
         requestSignature: context.requestSignature,
         calculatedSignature: context.calculatedSignature,
       };
@@ -46,7 +47,7 @@ const resolvers = {
     hello: (parent: any, args: any, context: any) => {
       return {
         status: "success",
-        message: "Hello from mutation!",
+        message: "GraphQL - Hello from mutation!",
         requestSignature: context.requestSignature,
         calculatedSignature: context.calculatedSignature,
       };
@@ -80,16 +81,28 @@ const handler = startServerAndCreateNextHandler(server, {
       created || 0
     );
 
+    let errorMessage = "";
+
     const signature = generateSignature(signatureBase, session.secretKey);
+    if (req.headers["signature"] !== signature) {
+      errorMessage += "Invalid HTTP signature ";
+    }
+
+    const token = (req.headers["authorization"] as string)?.split(" ")[1];
+    try {
+      verifyToken(token);
+    } catch (error) {
+      errorMessage += ` Invalid token: ${error}`;
+    }
 
     // Check if the signature matches, throw an error if it doesn't
-    if (req.headers["signature"] !== signature) {
+    if (errorMessage !== "") {
       throw new GraphQLError("Unauthorized - Invalid signature", {
         extensions: {
           code: "UNAUTHORIZED",
           http: { status: 401 },
           status: "error",
-          message: "Hello World GET - Invalid signature",
+          message: `GraphQL - ${errorMessage}`,
           requestSignature: req.headers["signature"],
           calculatedSignature: signature,
         },

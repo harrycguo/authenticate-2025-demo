@@ -15,7 +15,7 @@ import {
 const GRAPHQL_URL = "/api/graphql";
 
 // Middleware link function that takes `secretKey` as an argument
-const createClient = (secretKey: string) => {
+const createClient = (secretKey: string, signedToken: string) => {
   const middlewareLink = new ApolloLink((operation, forward) => {
     const body = JSON.stringify({
       operationName: operation.operationName,
@@ -26,8 +26,6 @@ const createClient = (secretKey: string) => {
     const method = "POST";
     const contentType = "application/json";
     const path = GRAPHQL_URL;
-
-    console.log("Request body:", body);
 
     // Calculate Content-Length and Digest synchronously
     const contentLength = Buffer.byteLength(body, "utf-8"); // Accurate content length in bytes
@@ -52,6 +50,7 @@ const createClient = (secretKey: string) => {
     operation.setContext(({ headers = {} }) => ({
       headers: {
         ...headers,
+        Authorization: `Bearer ${signedToken}`,
         Authority: process.env.NEXT_PUBLIC_API_URL as string,
         "Content-Type": contentType,
         "Content-Length": contentLength.toString(),

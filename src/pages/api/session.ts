@@ -6,11 +6,11 @@ import nextSession from "next-session";
 import { expressSession, promisifyStore } from "next-session/lib/compat";
 import passport from "passport";
 
-export const redisClient = new Redis(process.env.REDIS_URL as string);
+const redisClient = new Redis(process.env.REDIS_URL as string);
 
 const RedisStore = RedisStoreFactory(expressSession);
 
-export const getSession = nextSession({
+const getSession = nextSession({
   store: promisifyStore(
     new RedisStore({
       client: redisClient,
@@ -34,10 +34,16 @@ passport.deserializeUser((user, done) => {
   done(null, user as null);
 });
 
-export const sessionMiddleware = nc<NextApiRequest, NextApiResponse>()
+const sessionMiddleware = nc<NextApiRequest, NextApiResponse>()
   .use(async (req, res, next) => {
     await getSession(req, res);
     next();
   })
   .use(passport.initialize())
   .use(passport.session());
+
+export { getSession, sessionMiddleware };
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  res.writeHead(307, { Location: "/home" }).end();
+}

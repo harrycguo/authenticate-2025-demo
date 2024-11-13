@@ -56,11 +56,9 @@ const storeClientKeyPair = async (
   return new Promise<void>((resolve, reject) => {
     const request = store.put(keyPairData, "clientKeyPair");
     request.onsuccess = () => {
-      console.log("Client key pair and server public key stored successfully.");
       resolve();
     };
     request.onerror = () => {
-      console.error("Failed to store client key pair or server public key.");
       reject(request.error);
     };
   });

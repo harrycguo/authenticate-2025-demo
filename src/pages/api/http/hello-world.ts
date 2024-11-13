@@ -3,6 +3,7 @@ import {
   generateSignatureBase,
   parseCreatedFromSignatureInput,
 } from "@/utils/signature";
+import { verifyToken } from "@/utils/token";
 import { NextApiRequest, NextApiResponse } from "next";
 import nc from "next-connect";
 import { getSession } from "../session";
@@ -23,12 +24,25 @@ const GET = async (req: NextApiRequest, res: NextApiResponse) => {
     req.headers["Digest"] as string,
     created || 0
   );
-  const signature = generateSignature(signatureBase, session.secretKey);
 
+  let errorMessage = "";
+
+  const signature = generateSignature(signatureBase, session.secretKey);
   if (req.headers["signature"] !== signature) {
+    errorMessage += "Invalid HTTP signature ";
+  }
+
+  const token = (req.headers["authorization"] as string)?.split(" ")[1];
+  try {
+    verifyToken(token);
+  } catch (error) {
+    errorMessage += ` Invalid token: ${error}`;
+  }
+
+  if (errorMessage !== "") {
     return res.status(401).json({
       status: "error",
-      message: "Hello World GET - Invalid signature",
+      message: `Hello World GET - ${errorMessage}`,
       requestSignature: req.headers["signature"],
       calculatedSignature: signature,
     });
@@ -58,14 +72,24 @@ const POST = async (req: NextApiRequest, res: NextApiResponse) => {
     created || 0
   );
 
-  console.log("Signature Base:", signatureBase);
+  let errorMessage = "";
 
   const signature = generateSignature(signatureBase, session.secretKey);
-
   if (req.headers["signature"] !== signature) {
+    errorMessage += "Invalid HTTP signature ";
+  }
+
+  const token = (req.headers["authorization"] as string)?.split(" ")[1];
+  try {
+    verifyToken(token);
+  } catch (error) {
+    errorMessage += ` Invalid token: ${error}`;
+  }
+
+  if (errorMessage !== "") {
     return res.status(401).json({
       status: "error",
-      message: "Hello World POST - Invalid signature",
+      message: `Hello World POST - ${errorMessage}`,
       requestSignature: req.headers["signature"],
       calculatedSignature: signature,
     });

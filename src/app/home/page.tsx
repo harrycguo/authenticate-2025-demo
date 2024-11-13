@@ -2,7 +2,7 @@
 import { useSecretKey } from "@/contexts/secret-key-context";
 import { createClient } from "@/utils/apollo-client";
 import axiosClient from "@/utils/axios-client";
-import { gql } from "@apollo/client";
+import { ApolloError, gql } from "@apollo/client";
 import BusinessIcon from "@mui/icons-material/Business";
 import {
   AppBar,
@@ -25,9 +25,9 @@ interface User {
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [httpRequest, setHttpRequest] = useState<string | null>(null);
   const [httpResponse, setHttpResponse] = useState<string | null>(null);
-  const { secretKey, setSecretKey } = useSecretKey();
+  const { secretKey, setSecretKey, signedToken, setSignedToken } =
+    useSecretKey();
 
   useEffect(() => {
     axios
@@ -47,9 +47,29 @@ export default function Home() {
   }, [router]);
 
   useEffect(() => {
+    // Define the function to fetch the signed token
+    const fetchSignedToken = async () => {
+      try {
+        const response = await axios.get("/api/pa");
+        setSignedToken(response.data.token);
+      } catch (error) {
+        console.error("Error fetching signed token:", error);
+      }
+    };
+
+    // Initial fetch when component mounts
+    fetchSignedToken();
+
+    // Set up polling every 3 seconds
+    const interval = setInterval(fetchSignedToken, 45000);
+
+    // Clean up the interval on unmount
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const generateSecret = async () => {
       const secret = await generateSharedSecret();
-      console.log("Shared secret:", secret);
       setSecretKey(secret);
     };
     generateSecret();
@@ -62,7 +82,7 @@ export default function Home() {
 
   const makeAxiosGet = async () => {
     try {
-      const response = await axiosClient(secretKey).get(
+      const response = await axiosClient(secretKey, signedToken).get(
         "/api/http/hello-world"
       );
       setHttpResponse(JSON.stringify(response.data, null, 2));
@@ -84,7 +104,7 @@ export default function Home() {
 
   const makeAxiosPost = async () => {
     try {
-      const response = await axiosClient(secretKey).post(
+      const response = await axiosClient(secretKey, signedToken).post(
         "/api/http/hello-world",
         {
           hello: "world",
@@ -119,13 +139,23 @@ export default function Home() {
     `;
 
     try {
-      const client = createClient(secretKey);
+      const client = createClient(secretKey, signedToken);
       const response = await client.query({
         query: HELLO_QUERY,
       });
       setHttpResponse(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      console.error("Error with GraphQL GET request:", error);
+      if (error instanceof ApolloError) {
+        // ApolloError provides detailed info for GraphQL errors
+        if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+          setHttpResponse(JSON.stringify(error.graphQLErrors, null, 2));
+        } else if (error.networkError) {
+          // Network error without GraphQL response (e.g., 401 Unauthorized)
+          setHttpResponse(`Network error: ${error.networkError.message}`);
+        } else {
+          setHttpResponse("An unknown error occurred.");
+        }
+      }
     }
   };
 
@@ -142,13 +172,23 @@ export default function Home() {
     `;
 
     try {
-      const client = createClient(secretKey);
+      const client = createClient(secretKey, signedToken);
       const response = await client.mutate({
         mutation: HELLO_MUTATION,
       });
       setHttpResponse(JSON.stringify(response.data, null, 2));
     } catch (error) {
-      console.error("Error with GraphQL POST request:", error);
+      if (error instanceof ApolloError) {
+        // ApolloError provides detailed info for GraphQL errors
+        if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+          setHttpResponse(JSON.stringify(error.graphQLErrors, null, 2));
+        } else if (error.networkError) {
+          // Network error without GraphQL response (e.g., 401 Unauthorized)
+          setHttpResponse(`Network error: ${error.networkError.message}`);
+        } else {
+          setHttpResponse("An unknown error occurred.");
+        }
+      }
     }
   };
 
@@ -178,7 +218,7 @@ export default function Home() {
         <Box sx={{ textAlign: "center" }}>
           <BusinessIcon sx={{ fontSize: 60, color: "primary.main", mb: 2 }} />
           <Typography variant="h4" gutterBottom>
-            Welcome back, {user?.name}!
+            Welcome, {user?.name}!
           </Typography>
         </Box>
 
@@ -234,7 +274,7 @@ export default function Home() {
 
         <Box
           sx={{
-            minWidth: "700px",
+            width: "700px",
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-start",
@@ -257,6 +297,10 @@ export default function Home() {
                 color: httpResponse?.includes("error")
                   ? "darkred"
                   : "darkgreen",
+                whiteSpace: "pre-wrap", // Preserve whitespace and wrap lines
+                overflowWrap: "break-word", // Break long words if needed
+                maxWidth: "100%", // Make sure the <pre> respects parent width
+                boxSizing: "border-box", // Include padding/border in width calculation
               }}
             >
               {httpResponse}

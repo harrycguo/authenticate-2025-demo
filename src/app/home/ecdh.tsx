@@ -37,7 +37,6 @@ const generateSharedSecret = async (): Promise<string> => {
       String.fromCharCode(...sharedSecretUint8Array)
     );
 
-    console.log("Shared secret derived successfully.");
     return sharedSecretBase64;
   } catch (error) {
     console.error("Failed to derive shared secret:", error);
