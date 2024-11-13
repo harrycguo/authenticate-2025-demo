@@ -45,9 +45,11 @@ axiosInstance.interceptors.request.use((config) => {
   const signatureInput = generateSignatureInput(config.method as string, now);
   const signature = generateSignature(signatureBase, secretKey);
 
+  config.headers["Authority"] = config.baseURL;
+  config.headers["Authorization"] = `Bearer ${signedToken}`;
+
   config.headers["Signature-Input"] = signatureInput;
   config.headers["Signature"] = signature;
-  config.headers["Authorization"] = `Bearer ${signedToken}`;
   return config;
 });
 
