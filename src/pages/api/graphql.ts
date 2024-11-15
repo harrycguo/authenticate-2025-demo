@@ -97,7 +97,7 @@ const handler = startServerAndCreateNextHandler(server, {
 
     // Check if the signature matches, throw an error if it doesn't
     if (errorMessage !== "") {
-      throw new GraphQLError("Unauthorized - Invalid signature", {
+      throw new GraphQLError(`Unauthorized - ${errorMessage}`, {
         extensions: {
           code: "UNAUTHORIZED",
           http: { status: 401 },

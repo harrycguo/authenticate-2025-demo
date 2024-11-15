@@ -49,6 +49,9 @@ export default function Home() {
   useEffect(() => {
     // Define the function to fetch the signed token
     const fetchSignedToken = async () => {
+      if (secretKey === "no-key") {
+        return;
+      }
       try {
         const response = await axios.get("/api/pa");
         setSignedToken(response.data.token);
@@ -61,7 +64,7 @@ export default function Home() {
     fetchSignedToken();
 
     // Set up polling every 3 seconds
-    const interval = setInterval(fetchSignedToken, 45000);
+    const interval = setInterval(fetchSignedToken, 10000);
 
     // Clean up the interval on unmount
     return () => clearInterval(interval);
@@ -150,8 +153,15 @@ export default function Home() {
         if (error.graphQLErrors && error.graphQLErrors.length > 0) {
           setHttpResponse(JSON.stringify(error.graphQLErrors, null, 2));
         } else if (error.networkError) {
-          // Network error without GraphQL response (e.g., 401 Unauthorized)
-          setHttpResponse(`Network error: ${error.networkError.message}`);
+          const networkErrorDetails = (error.networkError as any).result
+            ?.errors?.[0];
+
+          if (networkErrorDetails) {
+            const { extensions } = networkErrorDetails;
+            setHttpResponse(JSON.stringify(extensions, null, 2));
+          } else {
+            setHttpResponse(`Network error: ${error.networkError.message}`);
+          }
         } else {
           setHttpResponse("An unknown error occurred.");
         }
@@ -183,8 +193,15 @@ export default function Home() {
         if (error.graphQLErrors && error.graphQLErrors.length > 0) {
           setHttpResponse(JSON.stringify(error.graphQLErrors, null, 2));
         } else if (error.networkError) {
-          // Network error without GraphQL response (e.g., 401 Unauthorized)
-          setHttpResponse(`Network error: ${error.networkError.message}`);
+          const networkErrorDetails = (error.networkError as any).result
+            ?.errors?.[0];
+
+          if (networkErrorDetails) {
+            const { extensions } = networkErrorDetails;
+            setHttpResponse(JSON.stringify(extensions, null, 2));
+          } else {
+            setHttpResponse(`Network error: ${error.networkError.message}`);
+          }
         } else {
           setHttpResponse("An unknown error occurred.");
         }

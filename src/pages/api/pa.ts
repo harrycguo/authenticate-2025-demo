@@ -10,7 +10,9 @@ export default async function handler(
   if (req.method === "GET") {
     const session = await getSession(req, res);
     if (session.user) {
-      const token = createSignedToken(session.user.name);
+      session.counter += 1;
+      console.log("session.counter", session.counter);
+      const token = createSignedToken(session.user.name, session.counter);
       res.status(200).json({ token });
     } else {
       res.status(401).json({ error: "Unauthorized" });

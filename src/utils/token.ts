@@ -3,23 +3,25 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 // Define the payload type
 interface TokenPayload {
   name: string;
+  counter: number;
   iat: number;
 }
 
 // Function to create and sign a token
-const createSignedToken = (name: string): string => {
+const createSignedToken = (name: string, counter: number): string => {
   const privateKey = Buffer.from(
     process.env.PRIVATE_KEY as string,
     "base64"
   ).toString("utf-8");
   const payload: TokenPayload = {
     name,
+    counter,
     iat: Math.floor(Date.now() / 1000),
   };
 
   const token = jwt.sign(payload, privateKey, {
     algorithm: "RS256",
-    expiresIn: "1m",
+    expiresIn: "15s",
   });
 
   return token;
