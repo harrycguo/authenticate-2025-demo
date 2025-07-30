@@ -3,7 +3,6 @@ import {
   generateSignatureBase,
   parseCreatedFromSignatureInput,
 } from "@/utils/signature";
-import { verifyToken } from "@/utils/token";
 import { NextApiRequest, NextApiResponse } from "next";
 import nc from "next-connect";
 import { getSession } from "../session";
@@ -32,27 +31,33 @@ const GET = async (req: NextApiRequest, res: NextApiResponse) => {
     errorMessage += "Invalid HTTP signature ";
   }
 
-  const token = (req.headers["authorization"] as string)?.split(" ")[1];
-  try {
-    verifyToken(token);
-  } catch (error) {
-    errorMessage += ` Invalid token: ${error}`;
-  }
+  const requestString = [
+    `GET ${req.url} HTTP/1.1`,
+    `Host: ${req.headers["authority"]}`,
+    `Signature-Input: ${req.headers["signature-input"]}`,
+    `Signature: ${signature}`,
+  ].join("\n");
 
   if (errorMessage !== "") {
     return res.status(401).json({
-      status: "error",
-      message: `Hello World GET - ${errorMessage}`,
-      requestSignature: req.headers["signature"],
-      calculatedSignature: signature,
+      request: requestString,
+      response: {
+        status: "error",
+        message: `GET - ${errorMessage}`,
+        requestSignature: req.headers["signature"],
+        calculatedSignature: signature,
+      },
     });
   }
 
   return res.json({
-    status: "success",
-    message: "Hello World GET - success",
-    requestSignature: req.headers["signature"],
-    calculatedSignature: signature,
+    request: requestString,
+    response: {
+      status: "success",
+      message: "Hello World!",
+      requestSignature: req.headers["signature"],
+      calculatedSignature: signature,
+    },
   });
 };
 
@@ -79,27 +84,39 @@ const POST = async (req: NextApiRequest, res: NextApiResponse) => {
     errorMessage += "Invalid HTTP signature ";
   }
 
-  const token = (req.headers["authorization"] as string)?.split(" ")[1];
-  try {
-    verifyToken(token);
-  } catch (error) {
-    errorMessage += ` Invalid token: ${error}`;
-  }
+  const requestString = [
+    `POST ${req.url} HTTP/1.1`,
+    `Host: ${req.headers["authority"]}`,
+    `Content-Type: ${req.headers["content-type"]}`,
+    `Content-Length: ${req.headers["content-length"]}`,
+    `Digest: ${req.headers["digest"]}`,
+    `Signature-Input: ${req.headers["signature-input"]}`,
+    `Signature: ${signature}`,
+    "",
+    `Payload:`,
+    JSON.stringify({ hello: "world" }, null, 2),
+  ].join("\n");
 
   if (errorMessage !== "") {
     return res.status(401).json({
-      status: "error",
-      message: `Hello World POST - ${errorMessage}`,
-      requestSignature: req.headers["signature"],
-      calculatedSignature: signature,
+      request: requestString,
+      response: {
+        status: "error",
+        message: `${errorMessage}`,
+        requestSignature: req.headers["signature"],
+        calculatedSignature: signature,
+      },
     });
   }
 
   return res.json({
-    status: "success",
-    message: "Hello World POST - success",
-    requestSignature: req.headers["signature"],
-    calculatedSignature: signature,
+    request: requestString,
+    response: {
+      status: "success",
+      message: "Hello World!",
+      requestSignature: req.headers["signature"],
+      calculatedSignature: signature,
+    },
   });
 };
 

@@ -3,7 +3,7 @@ import { useSecretKey } from "@/contexts/secret-key-context";
 import { Box, CircularProgress, Container, Typography } from "@mui/material";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { generateECDHKeyPairAndSharedSecret } from "./ecdh";
 
 const KeyExchangePage = () => {
@@ -11,7 +11,15 @@ const KeyExchangePage = () => {
   const { setSecretKey } = useSecretKey();
   const [error, setError] = useState<string | null>(null);
 
+  const didRun = useRef(false);
+
   useEffect(() => {
+    if (didRun.current) {
+      return;
+    }
+
+    didRun.current = true;
+
     const initiateKeyExchange = async () => {
       try {
         // Step 1: Check session status

@@ -1,9 +1,6 @@
 "use client";
 import { useSecretKey } from "@/contexts/secret-key-context";
-import { createClient } from "@/utils/apollo-client";
 import axiosClient from "@/utils/axios-client";
-import { ApolloError, gql } from "@apollo/client";
-import BusinessIcon from "@mui/icons-material/Business";
 import {
   AppBar,
   Box,
@@ -19,15 +16,14 @@ import { generateSharedSecret } from "./ecdh";
 
 interface User {
   name: string;
-  // add other user properties as needed
 }
 
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [httpRequest, setHttpRequest] = useState<string | null>(null);
   const [httpResponse, setHttpResponse] = useState<string | null>(null);
-  const { secretKey, setSecretKey, signedToken, setSignedToken } =
-    useSecretKey();
+  const { secretKey, setSecretKey, signedToken } = useSecretKey();
 
   useEffect(() => {
     axios
@@ -47,30 +43,6 @@ export default function Home() {
   }, [router]);
 
   useEffect(() => {
-    // Define the function to fetch the signed token
-    const fetchSignedToken = async () => {
-      if (secretKey === "no-key") {
-        return;
-      }
-      try {
-        const response = await axios.get("/api/pa");
-        setSignedToken(response.data.token);
-      } catch (error) {
-        console.error("Error fetching signed token:", error);
-      }
-    };
-
-    // Initial fetch when component mounts
-    fetchSignedToken();
-
-    // Set up polling every 3 seconds
-    const interval = setInterval(fetchSignedToken, 10000);
-
-    // Clean up the interval on unmount
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
     const generateSecret = async () => {
       const secret = await generateSharedSecret();
       setSecretKey(secret);
@@ -88,12 +60,16 @@ export default function Home() {
       const response = await axiosClient(secretKey, signedToken).get(
         "/api/http/hello-world"
       );
-      setHttpResponse(JSON.stringify(response.data, null, 2));
+      setHttpRequest(response.data.request);
+      setHttpResponse(JSON.stringify(response.data.response, null, 2));
     } catch (error) {
+      setHttpRequest((error as any).response.data.request);
       if ((error as any).response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        setHttpResponse(JSON.stringify((error as any).response.data, null, 2));
+        setHttpResponse(
+          JSON.stringify((error as any).response.data.response, null, 2)
+        );
       } else if ((error as any).request) {
         // The request was made but no response was received
         setHttpResponse("No response received from server.");
@@ -113,12 +89,16 @@ export default function Home() {
           hello: "world",
         }
       );
-      setHttpResponse(JSON.stringify(response.data, null, 2));
+      setHttpRequest(response.data.request);
+      setHttpResponse(JSON.stringify(response.data.response, null, 2));
     } catch (error) {
+      setHttpRequest((error as any).response.data.request);
       if ((error as any).response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        setHttpResponse(JSON.stringify((error as any).response.data, null, 2));
+        setHttpResponse(
+          JSON.stringify((error as any).response.data.response, null, 2)
+        );
       } else if ((error as any).request) {
         // The request was made but no response was received
         setHttpResponse("No response received from server.");
@@ -129,103 +109,33 @@ export default function Home() {
     }
   };
 
-  const makeGraphQLGet = async () => {
-    const HELLO_QUERY = gql`
-      query GetHello {
-        hello {
-          status
-          message
-          requestSignature
-          calculatedSignature
-        }
-      }
-    `;
-
-    try {
-      const client = createClient(secretKey, signedToken);
-      const response = await client.query({
-        query: HELLO_QUERY,
-      });
-      setHttpResponse(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      if (error instanceof ApolloError) {
-        // ApolloError provides detailed info for GraphQL errors
-        if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-          setHttpResponse(JSON.stringify(error.graphQLErrors, null, 2));
-        } else if (error.networkError) {
-          const networkErrorDetails = (error.networkError as any).result
-            ?.errors?.[0];
-
-          if (networkErrorDetails) {
-            const { extensions } = networkErrorDetails;
-            setHttpResponse(JSON.stringify(extensions, null, 2));
-          } else {
-            setHttpResponse(`Network error: ${error.networkError.message}`);
-          }
-        } else {
-          setHttpResponse("An unknown error occurred.");
-        }
-      }
-    }
-  };
-
-  const makeGraphQLPost = async () => {
-    const HELLO_MUTATION = gql`
-      mutation PostHello {
-        hello {
-          status
-          message
-          requestSignature
-          calculatedSignature
-        }
-      }
-    `;
-
-    try {
-      const client = createClient(secretKey, signedToken);
-      const response = await client.mutate({
-        mutation: HELLO_MUTATION,
-      });
-      setHttpResponse(JSON.stringify(response.data, null, 2));
-    } catch (error) {
-      if (error instanceof ApolloError) {
-        // ApolloError provides detailed info for GraphQL errors
-        if (error.graphQLErrors && error.graphQLErrors.length > 0) {
-          setHttpResponse(JSON.stringify(error.graphQLErrors, null, 2));
-        } else if (error.networkError) {
-          const networkErrorDetails = (error.networkError as any).result
-            ?.errors?.[0];
-
-          if (networkErrorDetails) {
-            const { extensions } = networkErrorDetails;
-            setHttpResponse(JSON.stringify(extensions, null, 2));
-          } else {
-            setHttpResponse(`Network error: ${error.networkError.message}`);
-          }
-        } else {
-          setHttpResponse("An unknown error occurred.");
-        }
-      }
-    }
-  };
-
   return (
     <>
       <AppBar position="static">
         <Toolbar>
-          <BusinessIcon sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Beyond Identity
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flexGrow: 1, fontWeight: 550 }}
+          >
+            Authenticate 2025 Demo
           </Typography>
-          <Button color="inherit" onClick={handleLogout}>
-            Logout
+          <Button
+            variant="contained"
+            color="error"
+            size="medium"
+            onClick={handleLogout}
+          >
+            <Typography fontSize={14} fontWeight={550}>
+              LOGOUT
+            </Typography>
           </Button>
         </Toolbar>
       </AppBar>
       <Container
         sx={{
           display: "flex",
-          minHeight: "calc(100vh - 64px)",
+          marginTop: 10,
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "column",
@@ -233,79 +143,104 @@ export default function Home() {
         }}
       >
         <Box sx={{ textAlign: "center" }}>
-          <BusinessIcon sx={{ fontSize: 60, color: "primary.main", mb: 2 }} />
+          <img
+            src="https://authenticatecon.com/wp-content/uploads/2021/04/logo-main.svg"
+            alt="Authenticate 2025 Logo"
+            width={280}
+            style={{ marginBottom: "12px" }}
+          />
           <Typography variant="h4" gutterBottom>
             Welcome, {user?.name}!
           </Typography>
-        </Box>
-
-        <Box>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 4,
-              justifyContent: "center",
-              mb: 3,
-            }}
-          >
-            <Box
-              sx={{
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: 1,
-              }}
-            >
-              <Typography variant="h6" color="primary" gutterBottom>
-                HTTP Axios
-              </Typography>
-              <Button variant="outlined" onClick={makeAxiosGet}>
-                GET
-              </Button>
-              <Button variant="outlined" onClick={makeAxiosPost}>
-                POST
-              </Button>
-            </Box>
-            <Box
-              sx={{
-                textAlign: "center",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: 1,
-              }}
-            >
-              <Typography variant="h6" color="primary" gutterBottom>
-                GraphQL
-              </Typography>
-              <Button variant="outlined" onClick={makeGraphQLGet}>
-                QUERY
-              </Button>
-              <Button variant="outlined" onClick={makeGraphQLPost}>
-                MUTATION
-              </Button>
-            </Box>
-          </Box>
+          <Typography variant="subtitle1" color="text.secondary">
+            Click on any of the buttons to see examples of signed HTTP requests
+            and responses.
+          </Typography>
         </Box>
 
         <Box
           sx={{
-            width: "700px",
             display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            gap: 1,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            width: "800px",
+            gap: 4,
+            mb: 3,
           }}
         >
           <Box
-            marginBottom={3}
             sx={{
-              fontFamily: "Roboto, sans-serif",
-              textAlign: "left",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: 1,
+              width: "50%",
             }}
           >
-            Response:
+            <Typography variant="h6" color="primary.dark" gutterBottom>
+              Request
+            </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={makeAxiosGet}
+              sx={{
+                color: "primary.dark",
+                borderColor: "primary.dark",
+                fontWeight: 500,
+                "&:hover": {
+                  borderColor: "primary.dark",
+                  backgroundColor: "rgba(23, 162, 184, 0.2)", // subtle blue
+                },
+              }}
+            >
+              GET
+            </Button>
+
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={makeAxiosPost}
+              sx={{
+                color: "primary.dark",
+                borderColor: "primary.dark",
+                fontWeight: 500,
+                "&:hover": {
+                  borderColor: "primary.dark",
+                  backgroundColor: "rgba(23, 162, 184, 0.2)", // subtle blue
+                },
+              }}
+            >
+              POST
+            </Button>
+            {httpRequest && (
+              <pre
+                style={{
+                  whiteSpace: "pre-wrap",
+                  fontFamily: "monospace",
+                  background: "#f7f7f7",
+                  padding: "10px",
+                  borderRadius: "6px",
+                  width: "100%",
+                  fontSize: "12px",
+                }}
+              >
+                {httpRequest}
+              </pre>
+            )}
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              gap: 1,
+              width: "50%",
+            }}
+          >
+            <Typography variant="h6" color="primary.dark" gutterBottom>
+              Response
+            </Typography>
             <pre
               style={{
                 fontFamily: "Roboto, sans-serif",
@@ -324,14 +259,6 @@ export default function Home() {
             </pre>
           </Box>
         </Box>
-        <Button
-          variant="contained"
-          color="error"
-          size="large"
-          onClick={handleLogout}
-        >
-          Logout
-        </Button>
       </Container>
     </>
   );

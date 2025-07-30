@@ -13,6 +13,13 @@ const generateSignatureBase = (
   digest: string | undefined,
   now: number
 ): string => {
+  console.log("method", method);
+  console.log("authority", authority);
+  console.log("path", path);
+  console.log("contentType", contentType);
+  console.log("contentLength", contentLength);
+  console.log("digest", digest);
+  console.log("now", now);
   if (method.toLowerCase() === "get") {
     return (
       `"@method": ${method.toUpperCase()}\n` +
